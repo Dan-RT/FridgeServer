@@ -97,25 +97,29 @@ authentification = function (res, token, callback) {
 };
 
 function asyncLoop(i, ingredientIds, ingredientArray, callback) {
-    if(i < ingredientIds.length) {
-        console.log(i);
+    try {
+        if(i < ingredientIds.length) {
+            console.log(i);
 
-        IngredientModel.findById(ingredientIds[i]).then(doc => {
-            console.log("\nINGREDIENT FOUND");
-            console.log(doc);
+            IngredientModel.findById(ingredientIds[i]).then(doc => {
+                console.log("\nINGREDIENT FOUND");
+                console.log(doc);
 
-            ingredientArray.push(doc.toObject());
+                ingredientArray.push(doc.toObject());
 
-            asyncLoop(i+1, ingredientIds, ingredientArray, callback);
-        }).catch(err => {
-            console.error(err);
-        });
+                asyncLoop(i+1, ingredientIds, ingredientArray, callback);
+            }).catch(err => {
+                console.error(err);
+            });
 
-    } else {
-        callback(ingredientArray);
+        } else {
+            callback(ingredientArray);
+        }
+    } catch (e) {
+        console.log(e);
+        callback(null);
     }
 }
-
 
 router.post('/ingredient/add/token/:token', function(req, res) {
 
@@ -349,10 +353,17 @@ router.get('/search/groceries/token/:token', function(req, res) {
                 console.log("\nFRIDGE LIST FOUND");
                 console.log(doc);
 
+                console.log("\n\nGROCERIES LIST");
+                console.log(doc[0].groceries);
+
                 var ingredientArray = [];
-                asyncLoop(0, doc.groceries, ingredientArray, function (ingredientArray) {
-                    console.log(ingredientArray);
-                    res.send(ingredientArray);
+                asyncLoop(0, doc[0].groceries, ingredientArray, function (ingredientArray) {
+                    if (ingredientArray) {
+                        console.log(ingredientArray);
+                        res.send(ingredientArray);
+                    } else {
+                        res.send("[]");
+                    }
                 });
 
             } else {
@@ -361,6 +372,7 @@ router.get('/search/groceries/token/:token', function(req, res) {
             }
         }).catch(err => {
             console.error(err);
+            res.send("{error:true}")
         });
     });
 });
