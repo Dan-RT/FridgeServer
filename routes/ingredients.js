@@ -71,6 +71,41 @@ router.post('/add/:token', function(req, res) {
     });
 });
 
+
+router.post('/create', function(req, res) {
+
+
+    console.log("\nPOST request: ");
+    
+    //must parse the array first
+    var kwds;
+    try {    
+    const kwds = JSON.parse(req.query.keywordsarray)
+    }
+		catch(err){
+			console.log(err)
+		}
+
+    let ingredientToAdd = new IngredientModel({
+        name: req.query.name,
+        typeDish: req.query.typeDish,
+        typeMeal: req.query.typeMeal,
+        weight: req.query.weight,
+        quantity: req.query.quantity,
+        keywords: kwds
+    });
+
+    ingredientToAdd.save()
+        .then(doc => {
+            console.log("\nINGREDIENT Created SUCCESSED");
+            console.log(doc);
+            res.send(doc)
+        }).catch(err => {
+        console.error(err);
+        res.send("{error:true}");
+    });
+});
+
 router.get('/delete/id/:id', function(req, res) {
 
     IngredientModel
