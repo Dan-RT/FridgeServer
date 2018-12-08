@@ -2,8 +2,6 @@
 
 class ingredient {
   constructor (name, typeDish, typeMeal, weight, quantity, keywords, barCode) {
-    
-    
     this.name = name;
     this.typeDish = typeDish;   // entrée/plats/desserts
     this.typeMeal = typeMeal;   // breakfast/lunch/dinner

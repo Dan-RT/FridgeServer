@@ -1,6 +1,5 @@
 const UserModel = require('./mongoose/UserSchema');
 
-
 exports.authentification = function (res, token, callback) {
     UserModel.find({
         token: token

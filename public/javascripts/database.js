@@ -1,9 +1,6 @@
 let mongoose = require('mongoose');
-
 const server = 'localhost:27017';
 const database = 'food';
-let RecipeModel = require('./mongoose/RecipeSchema');
-
 
 class Database {
     constructor() {
@@ -24,16 +21,3 @@ class Database {
 
 module.exports = new Database();
 
-/*module.exports.isAuthorized = function (token) {
-
-    UserModel.find({
-        name: req.params.name
-    }).then(doc => {
-        console.log("\nUSER AUTHORIZED FOUND");
-        console.log(doc);
-        return true;
-    }).catch(err => {
-        console.error(err);
-        return false;
-    });
-};*/
