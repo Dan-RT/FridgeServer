@@ -7,7 +7,8 @@ let IngredientSchema  = new mongoose.Schema({
     typeMeal: String,
     weight: Number,
     quantity: Number,
-    keywords: Array
+    keywords: Array,
+    barCode: String,
 });
 
 module.exports = mongoose.model('Ingredient', IngredientSchema);
