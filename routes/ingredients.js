@@ -9,9 +9,9 @@ const IngredientModel = require('../public/javascripts/mongoose/IngredientSchema
 const UserModel = require('../public/javascripts/mongoose/UserSchema');
 
 const listIngredients = [];
-listIngredients.push(new Ingredient("Tomato Sauce", "plat", "lunch", "100", 1, ["tomato", "sauce", "bolognaise", "provençale"]));
-listIngredients.push(new Ingredient("Pesto Sauce", "plat", "lunch", "100", 1, ["sauce", "pesto"]));
-listIngredients.push(new Ingredient("Pasta", "plat", "lunch", "100", 1, ["pasta", "pates", "pâtes", "spaghetti", "torti"]));
+listIngredients.push(new Ingredient("Tomato Sauce", "plat", "lunch", "100", 1, ["tomato", "sauce", "bolognaise", "provençale"], "0123456789"));
+listIngredients.push(new Ingredient("Pesto Sauce", "plat", "lunch", "100", 1, ["sauce", "pesto"], "0123456789"));
+listIngredients.push(new Ingredient("Pasta", "plat", "lunch", "100", 1, ["pasta", "pates", "pâtes", "spaghetti", "torti"], "0123456789"));
 
 router.get('/search/keyword/:keyword', function (req, res) {
     console.log("GET Request : keyword: " + req.params.keyword);
@@ -57,13 +57,50 @@ router.post('/add/:token', function(req, res) {
         typeMeal: listIngredients[0].typeMeal,
         weight: listIngredients[0].weight,
         quantity: listIngredients[0].quantity,
-        keywords: listIngredients[0].keywords
+        keywords: listIngredients[0].keywords,
+        barCode: listIngredients[0].barCode
     });
 
     ingredientToAdd.save()
         .then(doc => {
             console.log("\nINGREDIENT INSERTION SUCCESSED");
             console.log(doc);
+        }).catch(err => {
+        console.error(err);
+        res.send("{error:true}");
+    });
+});
+
+
+router.post('/create', function(req, res) {
+
+
+    console.log("\nPOST request: ");
+    
+    //must parse the array first
+    var kwds;
+    try {    
+    const kwds = JSON.parse(req.query.keywordsarray)
+    }
+		catch(err){
+			console.log(err)
+		}
+
+    let ingredientToAdd = new IngredientModel({
+        name: req.query.name,
+        typeDish: req.query.typeDish,
+        typeMeal: req.query.typeMeal,
+        weight: req.query.weight,
+        quantity: req.query.quantity,
+        keywords: kwds,
+        barCode: req.query.barCode
+    });
+
+    ingredientToAdd.save()
+        .then(doc => {
+            console.log("\nINGREDIENT Created SUCCESSED");
+            console.log(doc);
+            res.send(doc)
         }).catch(err => {
         console.error(err);
         res.send("{error:true}");
