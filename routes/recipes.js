@@ -6,8 +6,10 @@ const recipe = require('../public/javascripts/models/recipe.js');
 
 const RecipeModel = require('../public/javascripts/mongoose/RecipeSchema');
 const IngredientModel = require('../public/javascripts/mongoose/IngredientSchema');
+var helper = require("../public/javascripts/helpers.js");
 
 const listRecipes = [];
+
 
 listRecipes.push(new recipe("Pâtes Bolo",
 								[
@@ -32,21 +34,26 @@ listRecipes.push(new recipe("Soupe de tomate",
                 );
 
 
-router.get('/search/keyword/:keyword', function (req, res) {
- 	console.log("GET Request : keyword: " + req.params.keyword);
+router.get('/search/keyword/:keyword/token/:token', function (req, res) {
 
- 	var keyword_ = req.params.keyword;
+    var token = req.params.token;
+    console.log("GET Request : keyword: " + req.params.keyword);
+    console.log("\ntoken: " + token);
 
-    RecipeModel.find({
-        keywords: keyword_
-    }).then(doc => {
-        console.log("\nDOCUMENT FOUND");
-        console.log(doc);
-        console.log("\n");
-        res.send(doc);
-    }).catch(err => {
-        console.error(err);
-        res.send("{}");
+    helper.authentification(res, token, function () {
+        var keyword_ = req.params.keyword;
+
+        RecipeModel.find({
+            keywords: keyword_
+        }).then(doc => {
+            console.log("\nDOCUMENT FOUND");
+            console.log(doc);
+            console.log("\n");
+            res.send(doc);
+        }).catch(err => {
+            console.error(err);
+            res.send("{}");
+        });
     });
 });
 
@@ -97,47 +104,58 @@ function asyncLoop(i, ingredientArray, keywordsIngredients, callback) {
     }
 }
 
-router.post('/add', function(req, res) {
+router.post('/add/token/:token', function(req, res) {
     // Source : https://stackoverflow.com/questions/21829789/node-mongoose-find-query-in-loop-not-working/21830088
 
-    var result = JSON.stringify(req.body);
+    var token = req.params.token;
+    console.log("\ntoken: " + token);
 
-    console.log(listRecipes[0]);
-    console.log("\nPOST request: ");
-    //console.log(result);
+    helper.authentification(res, token, function () {
+        var result = JSON.stringify(req.body);
 
-    var keywordsIngredients = [];
+        console.log(listRecipes[0]);
+        console.log("\nPOST request: ");
+        //console.log(result);
 
-    asyncLoop(0, listRecipes[0].ingredients, keywordsIngredients, function(keywordsIngredients) {
-        //code that should happen after the loop
+        var keywordsIngredients = [];
 
-        console.log("\nKeywords of the new Recipe:");
-        console.log(keywordsIngredients);
+        asyncLoop(0, listRecipes[0].ingredients, keywordsIngredients, function(keywordsIngredients) {
+            //code that should happen after the loop
 
-        let recipeToAdd = new RecipeModel({
-            name: listRecipes[0].name,
-            ingredients: listRecipes[0].ingredients,
-            keywords: keywordsIngredients,
-            description: listRecipes[0].description
-        });
+            console.log("\nKeywords of the new Recipe:");
+            console.log(keywordsIngredients);
 
-        recipeToAdd.save()
-            .then(doc => {
-                console.log("\nINSERTION SUCCESSED");
-                console.log(doc);
-                console.log("\n");
-                res.send(doc);
-            }).catch(err => {
-            console.error(err);
-            res.send("{error:true}");
+            let recipeToAdd = new RecipeModel({
+                name: listRecipes[0].name,
+                ingredients: listRecipes[0].ingredients,
+                keywords: keywordsIngredients,
+                description: listRecipes[0].description
+            });
+
+            recipeToAdd.save()
+                .then(doc => {
+                    console.log("\nINSERTION SUCCESSED");
+                    console.log(doc);
+                    console.log("\n");
+                    res.send(doc);
+                }).catch(err => {
+                console.error(err);
+                res.send("{error:true}");
+            });
         });
     });
 
 });
 
 router.get('/delete/id/:id', function(req, res) {
-    RecipeModel
-        .findById(req.params.id).then(response => {
+
+    var token = req.params.token;
+    console.log("GET Request : keyword: " + req.params.keyword);
+    console.log("\ntoken: " + token);
+
+    helper.authentification(res, token, function () {
+        RecipeModel
+            .findById(req.params.id).then(response => {
             console.log("\nDOCUMENT DELETED");
             console.log("\n");
             res.send(response);
@@ -145,6 +163,7 @@ router.get('/delete/id/:id', function(req, res) {
             console.error(err);
             res.send("{}");
         });
+    });
 });
 
 router.post('/modify/', function(req, res) {

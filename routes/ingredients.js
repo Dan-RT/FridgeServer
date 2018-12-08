@@ -13,7 +13,6 @@ listIngredients.push(new Ingredient("Tomato Sauce", "plat", "lunch", "100", 1, [
 listIngredients.push(new Ingredient("Pesto Sauce", "plat", "lunch", "100", 1, ["sauce", "pesto"], "0123456789"));
 listIngredients.push(new Ingredient("Pasta", "plat", "lunch", "100", 1, ["pasta", "pates", "pâtes", "spaghetti", "torti"], "0123456789"));
 
-
 router.get('/search/keyword/:keyword', function (req, res) {
     console.log("GET Request : keyword: " + req.params.keyword);
 
@@ -123,7 +122,6 @@ router.get('/delete/id/:id', function(req, res) {
     });
 
 });
-
 
 router.get('/delete/keyword/:keyword', function(req, res) {
 

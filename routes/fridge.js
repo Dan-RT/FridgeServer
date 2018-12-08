@@ -6,7 +6,6 @@ const Recipe = require('../public/javascripts/models/recipe.js');
 
 const RecipeModel = require('../public/javascripts/mongoose/RecipeSchema');
 const IngredientModel = require('../public/javascripts/mongoose/IngredientSchema');
-const UserModel = require('../public/javascripts/mongoose/UserSchema');
 const FridgeListModel = require('../public/javascripts/mongoose/FridgeListSchema');
 
 
@@ -15,6 +14,7 @@ listIngredients.push(new Ingredient("Tomato Sauce", "plat", "lunch", "100", 1, [
 listIngredients.push(new Ingredient("Pesto Sauce", "plat", "lunch", "100", 1, ["sauce", "pesto"]));
 listIngredients.push(new Ingredient("Pasta", "plat", "lunch", "100", 1, ["pasta", "pates", "pâtes", "spaghetti", "torti"]));
 
+var helper = require("../public/javascripts/helpers.js");
 
 insertFridgeList = function (res, token, idIngredientToAdd) {
 
@@ -79,43 +79,56 @@ insertFridgeList = function (res, token, idIngredientToAdd) {
     });
 };
 
-authentification = function (res, token, callback) {
-    UserModel.find({
-        token: token
-    }).then(doc => {
-        if (doc.length === 0) {
-            throw Error('USER NOT AUTHORIZED');
-        } else {
-            console.log("\nUSER AUTHORIZED FOUND");
-            console.log(doc);
-            callback(res, token);
-        }
-    }).catch(err => {
-        console.log("\nUSER NOT AUTHORIZED");
-        res.send("{notAuthorized:true}");
-    });
-};
 
 function asyncLoop(i, ingredientIds, ingredientArray, callback) {
-    if(i < ingredientIds.length) {
-        console.log(i);
+    try {
+        if(i < ingredientIds.length) {
+            console.log(i);
 
-        IngredientModel.findById(ingredientIds[i]).then(doc => {
-            console.log("\nINGREDIENT FOUND");
-            console.log(doc);
+            IngredientModel.findById(ingredientIds[i]).then(doc => {
+                console.log("\nINGREDIENT FOUND");
+                console.log(doc);
 
-            ingredientArray.push(doc.toObject());
+                ingredientArray.push(doc.toObject());
 
-            asyncLoop(i+1, ingredientIds, ingredientArray, callback);
-        }).catch(err => {
-            console.error(err);
-        });
+                asyncLoop(i+1, ingredientIds, ingredientArray, callback);
+            }).catch(err => {
+                console.error(err);
+            });
 
-    } else {
-        callback(ingredientArray);
+        } else {
+            callback(ingredientArray);
+        }
+    } catch (e) {
+        console.log(e);
+        callback(null);
     }
 }
 
+router.get('/search/token/:token', function(req, res) {
+
+    console.log("\nGET request: ");
+    var token = req.params.token;
+    console.log("\ntoken: " + token);
+    //console.log(result);
+
+    helper.authentification(res, token, function () {
+        FridgeListModel.find({
+            tokenUser: token
+        }).then(doc => {
+            if (doc.length > 0) {
+                console.log("\nFRIDGE LIST FOUND");
+                console.log(doc[0]);
+                res.send(doc[0]);
+            } else {
+                console.log("\nFRIDGE LIST NOT FOUND");
+                res.send("{listNotFound:true}");
+            }
+        }).catch(err => {
+            console.error(err);
+        });
+    });
+});
 
 router.post('/ingredient/add/token/:token', function(req, res) {
 
@@ -123,7 +136,7 @@ router.post('/ingredient/add/token/:token', function(req, res) {
     var token = req.params.token;
     console.log("\ntoken: " + token);
 
-    authentification(res, token, function () {
+    helper.authentification(res, token, function () {
 
         let ingredientToAdd = new IngredientModel({
             name: listIngredients[0].name,
@@ -155,7 +168,7 @@ router.get('/search/token/:token', function(req, res) {
     console.log("\ntoken: " + token);
     //console.log(result);
 
-    authentification(res, token, function () {
+    helper.authentification(res, token, function () {
         FridgeListModel.find({
             tokenUser: token
         }).then(doc => {
@@ -185,7 +198,7 @@ router.get('/ingredient/remove/id/:id/groceries/:groceries/token/:token', functi
     var saveToGroceries = req.params.groceries;
     console.log("\nsaveToGroceries: " + saveToGroceries);
 
-    authentification(res, token, function () {
+    helper.authentification(res, token, function () {
         FridgeListModel.find({
             tokenUser: token
         }).then(doc => {
@@ -274,7 +287,7 @@ router.get('/remove/groceries/id/:id/token/:token', function(req, res) {
     var token = req.params.token;
     console.log("\ntoken: " + token);
 
-    authentification(res, token, function () {
+    helper.authentification(res, token, function () {
         FridgeListModel.find({
             tokenUser: token
         }).then(doc => {
@@ -341,7 +354,7 @@ router.get('/search/groceries/token/:token', function(req, res) {
     var token = req.params.token;
     console.log("\ntoken: " + token);
 
-    authentification(res, token, function () {
+    helper.authentification(res, token, function () {
         FridgeListModel.find({
             tokenUser: token
         }).then(doc => {
@@ -349,10 +362,17 @@ router.get('/search/groceries/token/:token', function(req, res) {
                 console.log("\nFRIDGE LIST FOUND");
                 console.log(doc);
 
+                console.log("\n\nGROCERIES LIST");
+                console.log(doc[0].groceries);
+
                 var ingredientArray = [];
-                asyncLoop(0, doc.groceries, ingredientArray, function (ingredientArray) {
-                    console.log(ingredientArray);
-                    res.send(ingredientArray);
+                asyncLoop(0, doc[0].groceries, ingredientArray, function (ingredientArray) {
+                    if (ingredientArray) {
+                        console.log(ingredientArray);
+                        res.send(ingredientArray);
+                    } else {
+                        res.send("[]");
+                    }
                 });
 
             } else {
@@ -361,6 +381,7 @@ router.get('/search/groceries/token/:token', function(req, res) {
             }
         }).catch(err => {
             console.error(err);
+            res.send("{error:true}")
         });
     });
 });
@@ -371,7 +392,7 @@ router.get('/fetchAllFridge/token/:token', function(req, res) {
     var token = req.params.token;
     console.log("\ntoken: " + token);
 
-    authentification(res, token, function () {
+    helper.authentification(res, token, function () {
         FridgeListModel.find({
             tokenUser: token
         }).then(doc => {
