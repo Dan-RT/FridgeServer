@@ -1,14 +1,16 @@
 //const Pointage = require('./pointage.js');
 
 class ingredient {
-  constructor (name, typeDish, typeMeal, weight, quantity, keywords, barCode?: string="000000") {
+  constructor (name, typeDish, typeMeal, weight, quantity, keywords, barCode) {
+    
+    
     this.name = name;
     this.typeDish = typeDish;   // entrée/plats/desserts
     this.typeMeal = typeMeal;   // breakfast/lunch/dinner
     this.weight = weight;       // grammes
     this.quantity = quantity;
     this.keywords = keywords;
-    this.barCode = barCode
+    this.barCode = barCode || "000000";
   }
 
   getKeywords () {
@@ -22,7 +24,7 @@ class ingredient {
             'weight' + this.weight +
             'quantity' + this.quantity +
             'keywords' + this.keywords + 
-            'barCode' + this.barCode + 
+            'barCode' + this.barCode
   }
 
   toJSON () {
