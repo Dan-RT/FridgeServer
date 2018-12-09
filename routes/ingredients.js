@@ -71,7 +71,6 @@ router.post('/add/:token', function(req, res) {
     });
 });
 
-
 router.post('/create', function(req, res) {
 
 
@@ -128,6 +127,21 @@ router.get('/delete/keyword/:keyword', function(req, res) {
     IngredientModel
         .deleteMany({
             keywords: req.params.keyword
+        }).then(response => {
+        console.log("\nDOCUMENT(S) DELETED");
+        console.log("\n");
+        res.send(response);
+    }).catch(err => {
+        console.error(err);
+        res.send("{}");
+    });
+
+});
+
+router.get('/delete/barCode/:barCode', function(req, res) {
+    IngredientModel
+        .deleteMany({
+            barCode: req.params.barCode
         }).then(response => {
         console.log("\nDOCUMENT(S) DELETED");
         console.log("\n");

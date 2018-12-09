@@ -1,8 +1,8 @@
 class recipe {
 
-  constructor (name, ingredientsID, keywords, description) {
+  constructor (name, ingredientsBarcode, keywords, description) {
   	this.name = name;
-    this.ingredients = ingredientsID;
+    this.ingredients = ingredientsBarcode;
     this.keywords = keywords;
     this.description = description;
   }

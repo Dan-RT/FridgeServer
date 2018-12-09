@@ -10,13 +10,13 @@ const FridgeListModel = require('../public/javascripts/mongoose/FridgeListSchema
 
 
 const listIngredients = [];
-listIngredients.push(new Ingredient("Tomato Sauce", "plat", "lunch", "100", 1, ["tomato", "sauce", "bolognaise", "provençale"]), "100000");
-listIngredients.push(new Ingredient("Pesto Sauce", "plat", "lunch", "100", 1, ["sauce", "pesto"]), "100001");
+listIngredients.push(new Ingredient("Tomato Sauce", "plat", "lunch", "100", 1, ["tomato", "sauce", "bolognaise", "provençale"], "100000"));
+listIngredients.push(new Ingredient("Pesto Sauce", "plat", "lunch", "100", 1, ["sauce", "pesto"], "100001"));
 listIngredients.push(new Ingredient("Pasta", "plat", "lunch", "100", 1, ["pasta", "pates", "pâtes", "spaghetti", "torti"]), "100002");
 
 var helper = require("../public/javascripts/helpers.js");
 
-insertFridgeList = function (res, token, idIngredientToAdd) {
+insertFridgeList = function (res, token, barCodeIngredientToAdd) {
 
     console.log("insertFridgeList: " + token);
 
@@ -31,7 +31,7 @@ insertFridgeList = function (res, token, idIngredientToAdd) {
             console.log(doc);
 
             var list = doc[0].toObject();
-            list.ingredients.push(idIngredientToAdd);
+            list.ingredients.push(barCodeIngredientToAdd);
 
             FridgeListModel
                 .findOneAndUpdate(
@@ -57,7 +57,7 @@ insertFridgeList = function (res, token, idIngredientToAdd) {
         else {
             //Sinon on crée la liste
 
-            var ingredientTmp = [idIngredientToAdd];
+            var ingredientTmp = [barCodeIngredientToAdd];
 
             let FridgeListToAdd = new FridgeListModel({
                 tokenUser: token,
@@ -92,33 +92,32 @@ updateQuantity = function (res, token, add, barCode, quantity) {
             }).then(doc_ingr => {
                 if (doc_ingr.length > 0) {
                     console.log("\nINGREDIENT FOUND");
-                    console.log(doc_ingr[0]);
+                    //console.log(doc_ingr[0]);
 
                     if (add === true) {
-                        doc_ingr[0].quantity += quantity;
+                        doc_ingr[0].quantity += parseInt(quantity);
                     } else {
-                        doc_ingr[0].quantity -= quantity;
+                        doc_ingr[0].quantity -= parseInt(quantity);
                     }
 
-                    IngredientModel
-                        .findOneAndUpdate(
+                    IngredientModel.findOneAndUpdate(
                             {
                                 barCode: barCode
                             },
                             {
-                                ingredients: fridge.ingredients
+                                quantity: doc_ingr[0].quantity
                             },
                             {
                                 new: true,
                                 runValidators: true
                             })
-                        .then(doc => {
-                            console.log(doc);
-                            console.log("\nFRIDGE INGREDIENT LIST UPDATED");
+                    .then(doc => {
+                        console.log(doc);
+                        console.log("\nINGREDIENT UPDATED");
 
-                            res.send("200");
+                        res.send(doc);
 
-                        }).catch(err => {
+                    }).catch(err => {
                         console.error(err);
                         console.log("\nFRIDGE INGREDIENT LIST NOT UPDATED");
                         res.send("{error:\"FRIDGE INGREDIENT LIST NOT UPDATED\"}");
@@ -132,29 +131,63 @@ updateQuantity = function (res, token, add, barCode, quantity) {
                 console.error(err);
                 res.send("{error:\"unknown\"}");
             });
-
-            res.send(doc[0]);
         } else {
             console.log("\nFRIDGE LIST NOT FOUND");
-            res.send("{listNotFound:true}");
+            res.send("{error:\"FRIDGE NOT FOUND\"}");
         }
     }).catch(err => {
         console.error(err);
     });
 };
 
-function asyncLoop(i, ingredientIds, ingredientArray, callback) {
-    try {
-        if(i < ingredientIds.length) {
-            console.log(i);
+sendBackFridge = function (res, fridge, index) {
+    fridge.ingredients.splice(index, 1);
 
-            IngredientModel.findById(ingredientIds[i]).then(doc => {
+    console.log("List:");
+    console.log(fridge.ingredients);
+
+    FridgeListModel
+        .findOneAndUpdate(
+            {
+                _id: fridge._id
+            },
+            {
+                ingredients: fridge.ingredients,
+                groceries: fridge.groceries
+            },
+            {
+                new: true,
+                runValidators: true
+            })
+        .then(doc => {
+            console.log(doc);
+            console.log("\nFRIDGE LIST UPDATED");
+
+            var ingredientArray = [];
+            asyncLoop(0, doc.ingredients, ingredientArray, function (ingredientArray) {
+                res.send(ingredientArray);
+            });
+
+        }).catch(err => {
+        console.error(err);
+    });
+};
+
+function asyncLoop(i, ingredientBarCodes, ingredientArray, callback) {
+    try {
+        if(i < ingredientBarCodes.length) {
+            console.log(i);
+            console.log(ingredientBarCodes[i]);
+
+            IngredientModel.find({
+                barCode: String(ingredientBarCodes[i])
+            }).then(doc => {
                 console.log("\nINGREDIENT FOUND");
                 console.log(doc);
 
-                ingredientArray.push(doc.toObject());
+                ingredientArray.push(doc[0].toObject());
 
-                asyncLoop(i+1, ingredientIds, ingredientArray, callback);
+                asyncLoop(i+1, ingredientBarCodes, ingredientArray, callback);
             }).catch(err => {
                 console.error(err);
             });
@@ -169,6 +202,7 @@ function asyncLoop(i, ingredientIds, ingredientArray, callback) {
 }
 
 //GET contenu frigo by token
+//tested
 router.get('/search/token/:token', function(req, res) {
 
     console.log("\nGET request: ");
@@ -195,6 +229,7 @@ router.get('/search/token/:token', function(req, res) {
 });
 
 //POST new ingredient
+//tested
 router.post('/ingredient/add/token/:token', function(req, res) {
 
     console.log("\nPOST request: ");
@@ -204,22 +239,50 @@ router.post('/ingredient/add/token/:token', function(req, res) {
     helper.authentification(res, token, function () {
 
         let ingredientToAdd = new IngredientModel({
-            name: listIngredients[0].name,
-            typeDish: listIngredients[0].typeDish,
-            typeMeal: listIngredients[0].typeMeal,
-            weight: listIngredients[0].weight,
-            quantity: listIngredients[0].quantity,
-            keywords: listIngredients[0].keywords
+            name: listIngredients[1].name,
+            typeDish: listIngredients[1].typeDish,
+            typeMeal: listIngredients[1].typeMeal,
+            weight: listIngredients[1].weight,
+            quantity: listIngredients[1].quantity,
+            keywords: listIngredients[1].keywords,
+            barCode: listIngredients[1].barCode
         });
 
-        ingredientToAdd.save()
-            .then(doc => {
-                console.log("\nINGREDIENT INSERTION SUCCESSED");
-                console.log(doc);
 
-                var id = doc.toObject()._id;
-                insertFridgeList(res, token, id);
-            }).catch(err => {
+        FridgeListModel.find({
+            tokenUser: token
+        }).then(doc => {
+            console.log("Ingredient verification");
+            console.log(doc[0].ingredients);
+            var inFridge = false;
+
+            for (var i = 0; i < doc[0].ingredients.length; i++) {
+                //ATTENTION À CHANGER ÉGALEMENT QUAND ON SUPPRIME LE STATIQUE
+                if (doc[0].ingredients[i] === String(listIngredients[1].barCode)) {
+                    inFridge = true;
+                    console.log("Ingredient already in fridge.");
+                    break
+                }
+
+            }
+
+            if (inFridge) {
+                console.log("\nINGREDIENT ALREADY IN FRIDGE");
+                res.send("{error:\"INGREDIENT ALREADY IN FRIDGE\"}");
+            } else {
+                ingredientToAdd.save()
+                    .then(doc => {
+                        console.log("\nINGREDIENT INSERTION SUCCESSED");
+                        console.log(doc);
+
+                        var barCode = doc.toObject().barCode;
+                        insertFridgeList(res, token, barCode);
+                    }).catch(err => {
+                    console.error(err);
+                    res.send("{error:true}");
+                });
+            }
+        }).catch(err => {
             console.error(err);
             res.send("{error:true}");
         });
@@ -227,7 +290,7 @@ router.post('/ingredient/add/token/:token', function(req, res) {
 });
 
 //ADD - increase quantity
-//à checker
+//tested
 router.get('/add/barCode/:barCode/quantity/:quantity/token/:token', function(req, res) {
     console.log("\nGET request: ");
     var token = req.params.token;
@@ -245,7 +308,7 @@ router.get('/add/barCode/:barCode/quantity/:quantity/token/:token', function(req
 });
 
 //SUB - increase quantity
-//à checker
+//tested
 router.get('/sub/barCode/:barCode/quantity/:quantity/token/:token', function(req, res) {
     console.log("\nGET request: ");
     var token = req.params.token;
@@ -263,6 +326,7 @@ router.get('/sub/barCode/:barCode/quantity/:quantity/token/:token', function(req
 });
 
 //DELETE ingredient from fridge by token
+//tested
 router.get('/ingredient/remove/barCode/:barCode/groceries/:groceries/token/:token', function(req, res) {
 
     console.log("\nGET request: ");
@@ -272,8 +336,8 @@ router.get('/ingredient/remove/barCode/:barCode/groceries/:groceries/token/:toke
     var barCode = req.params.barCode;
     console.log("\nbarCode: " + barCode);
 
-    var saveToGroceries = req.params.groceries;
-    console.log("\nsaveToGroceries: " + saveToGroceries);
+    var saveToGroceries = (req.params.groceries === "true");
+    console.log(saveToGroceries);
 
     helper.authentification(res, token, function () {
         FridgeListModel.find({
@@ -295,40 +359,20 @@ router.get('/ingredient/remove/barCode/:barCode/groceries/:groceries/token/:toke
                 }
 
                 if (index >= 0) {
-                    if (saveToGroceries) {
+                    if (saveToGroceries === false) {
+                        IngredientModel.findOneAndRemove({
+                            barCode: barCode
+                        }).then(response => {
+                            sendBackFridge(res, fridge, index);
+                        }).catch(err => {
+                            console.error(err);
+                            res.send("{error:\"FAILED TO REMOVE INGREDIENT\"}");
+                        });
+                    } else {
                         fridge.groceries.push(fridge.ingredients[index]);
+                        sendBackFridge(res, fridge);
                     }
 
-                    fridge.ingredients.splice(index, 1);
-
-                    console.log("List:");
-                    console.log(fridge.ingredients);
-
-                    FridgeListModel
-                        .findOneAndUpdate(
-                            {
-                                _id: fridge._id
-                            },
-                            {
-                                ingredients: fridge.ingredients,
-                                groceries: fridge.groceries
-                            },
-                            {
-                                new: true,
-                                runValidators: true
-                            })
-                        .then(doc => {
-                            console.log(doc);
-                            console.log("\nFRIDGE LIST UPDATED");
-
-                            var ingredientArray = [];
-                            asyncLoop(0, doc.ingredients, ingredientArray, function (ingredientArray) {
-                                res.send(ingredientArray);
-                            });
-
-                        }).catch(err => {
-                        console.error(err);
-                    });
                 } else {
                     res.send("{ingredientNotFound:true}")
                 }
@@ -343,6 +387,7 @@ router.get('/ingredient/remove/barCode/:barCode/groceries/:groceries/token/:toke
 });
 
 //DELETE fridge by token
+//tested
 router.get('/delete/token/:token', function(req, res) {
 
     FridgeListModel
@@ -360,11 +405,12 @@ router.get('/delete/token/:token', function(req, res) {
 });
 
 //REMOVE ingredient from grocery list by barCode
-//À checker
+//tested
 router.get('/remove/groceries/barCode/:barCode/token/:token', function(req, res) {
 
     console.log("\nGET request: ");
     var token = req.params.token;
+    var barCode = req.params.barCode;
     console.log("\ntoken: " + token);
 
     helper.authentification(res, token, function () {
@@ -379,7 +425,7 @@ router.get('/remove/groceries/barCode/:barCode/token/:token', function(req, res)
                 let index = -1;
 
                 for(var i = 0; i < list.length; i++){
-                    if (list[i] == req.params.id) {
+                    if (list[i] === barCode) {
                         index = i;
                         break;
                     }
@@ -391,28 +437,37 @@ router.get('/remove/groceries/barCode/:barCode/token/:token', function(req, res)
                     console.log("Groceries:");
                     console.log(fridge.groceries);
 
-                    FridgeListModel
-                        .findOneAndUpdate(
-                            {
-                                _id: fridge._id
-                            },
-                            {
-                                groceries: fridge.groceries
-                            },
-                            {
-                                new: true,
-                                runValidators: true
-                            })
-                        .then(doc => {
-                            console.log(doc);
-                            console.log("\nGROCERY LIST UPDATED");
-                            var ingredientArray = [];
-                            asyncLoop(0, doc.groceries, ingredientArray, function (ingredientArray) {
-                                res.send(ingredientArray);
-                            });
+                    IngredientModel
+                        .findOneAndRemove({
+                            barCode: barCode
+                        }).then(response => {
+                        FridgeListModel
+                            .findOneAndUpdate(
+                                {
+                                    _id: fridge._id
+                                },
+                                {
+                                    groceries: fridge.groceries
+                                },
+                                {
+                                    new: true,
+                                    runValidators: true
+                                })
+                            .then(doc => {
+                                console.log(doc);
+                                console.log("\nGROCERY LIST UPDATED");
+                                var ingredientArray = [];
+                                asyncLoop(0, doc.groceries, ingredientArray, function (ingredientArray) {
+                                    res.send(ingredientArray);
+                                });
 
-                        }).catch(err => {
+                            }).catch(err => {
+                            console.error(err);
+                        });
+
+                    }).catch(err => {
                         console.error(err);
+                        res.send("{}");
                     });
                 } else {
                     console.log("\nINGREDIENT NOT FOUND");
@@ -429,6 +484,7 @@ router.get('/remove/groceries/barCode/:barCode/token/:token', function(req, res)
 });
 
 //GET groceries by token
+//tested
 router.get('/search/groceries/token/:token', function(req, res) {
 
     console.log("\nGET request: ");
@@ -468,6 +524,7 @@ router.get('/search/groceries/token/:token', function(req, res) {
 });
 
 //GET all ingredients from fridge
+//tested
 router.get('/fetchAllFridge/token/:token', function(req, res) {
 
     console.log("\nGET request: ");
@@ -495,12 +552,13 @@ router.get('/fetchAllFridge/token/:token', function(req, res) {
             }
         }).catch(err => {
             console.error(err);
+            res.send("{listNotFound:true}");
         });
     });
 });
 
 //ADD recipes to fridge
-//à checker
+//tested
 router.get('/recipes/add/id/:id/token/:token', function(req, res) {
 
     console.log("\nGET request: ");
@@ -552,9 +610,8 @@ router.get('/recipes/add/id/:id/token/:token', function(req, res) {
     });
 });
 
-
 //DELETE recipes from fridge
-//à checker
+//tested
 router.get('/recipes/delete/id/:id/token/:token', function(req, res) {
 
     console.log("\nGET request: ");
@@ -572,37 +629,44 @@ router.get('/recipes/delete/id/:id/token/:token', function(req, res) {
                 var fridge = doc[0];
                 var index = -1;
 
-                for (let i = 0; i < fridge.recipes; i++) {
-                    if (id === fridge.recipes[i]) {
+                var flag = false;
+                for (let i = 0; i < fridge.recipes.length; i++) {
+                    if (id === String(fridge.recipes[i])) {
                         index = i;
+                        console.log("recette found at index: " + index);
+                        flag = true;
                         break;
                     }
                 }
 
-                fridge.recipes.slice(index, 1);
+                if(flag) {
+                    fridge.recipes.splice(index, 1);
 
-                FridgeListModel
-                    .findOneAndUpdate(
-                        {
-                            _id: fridge.id
-                        },
-                        {
-                            recipes: fridge.recipes
-                        },
-                        {
-                            new: true,
-                            runValidators: true
-                        })
-                    .then(doc => {
-                        console.log(doc);
-                        console.log("\nFRIDGE RECIPES UPDATED");
+                    FridgeListModel
+                        .findOneAndUpdate(
+                            {
+                                _id: fridge.id
+                            },
+                            {
+                                recipes: fridge.recipes
+                            },
+                            {
+                                new: true,
+                                runValidators: true
+                            })
+                        .then(doc => {
+                            console.log(doc);
+                            console.log("\nFRIDGE RECIPES UPDATED");
 
-                        res.send(doc);
-                    }).catch(err => {
-                    console.error(err);
-                    res.send("{error:\"RECIPES NOT UPDATED\"}");
-                });
-
+                            res.send(doc);
+                        }).catch(err => {
+                        console.error(err);
+                        res.send("{error:\"RECIPES NOT UPDATED\"}");
+                    });
+                } else {
+                    console.log("\nRECIPE NOT FOUND");
+                    res.send("{error:\"RECIPE NOT FOUND\"}");
+                }
             } else {
                 console.log("\nFRIDGE NOT FOUND");
                 res.send("{error:\"FRIDGE NOT FOUND\"}");
