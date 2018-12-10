@@ -31,6 +31,7 @@ insertFridgeList = function (res, token, barCodeIngredientToAdd) {
             console.log("\nLIST FOUND");
             console.log(doc);
 
+
             var list = doc[0].toObject();
             list.ingredients.push(barCodeIngredientToAdd);
 
@@ -51,11 +52,14 @@ insertFridgeList = function (res, token, barCodeIngredientToAdd) {
                         console.log(doc);
                         console.log("\nFRIDGE LIST UPDATED");
                         res.send(doc);
+                    } else {
+                        console.log("\nFAILED TO UPDATE LIST");
+                        res.send("error:\"FAILED TO UPDATE LIST\"");
                     }
                 }).catch(err => {
                     console.error(err);
-            });
-
+                    res.send("error:\"FAILED TO UPDATE LIST\"");
+                });
         }
         else {
             //Sinon on crée la liste
@@ -172,16 +176,21 @@ sendBackFridge = function (res, fridge, index) {
             console.log("\nFRIDGE LIST UPDATED");
 
             var ingredientArray = [];
-            asyncLoop(res, 0, doc.ingredients, ingredientArray, function (ingredientArray) {
+            asyncLoop(res, 0, doc.ingredientsBarcode, ingredientArray, function (ingredientArray) {
                 res.send(ingredientArray);
             });
 
         }).catch(err => {
-        console.error(err);
-    });
+            console.error(err);
+            res.send("error:\"FAILED TO UPDATE FRIDGE LIST\"");
+        });
 };
 
 function asyncLoop(res, i, ingredientBarCodes, ingredientArray, callback) {
+    console.log("ingredients:");
+    console.log(ingredientBarCodes);
+    console.log("fin ingrédients");
+
     try {
         if(i < ingredientBarCodes.length) {
             console.log(i);
@@ -190,18 +199,17 @@ function asyncLoop(res, i, ingredientBarCodes, ingredientArray, callback) {
             IngredientModel.find({
                 barCode: String(ingredientBarCodes[i])
             }).then(doc => {
-                console.log("\nINGREDIENT FOUND");
                 console.log(doc);
-                if (doc[0] !== undefined) {
+                if (doc.length > 0) {
+                    console.log("\nINGREDIENT FOUND");
                     ingredientArray.push(doc[0].toObject());
-                    asyncLoop(res, i+1, ingredientBarCodes, ingredientArray, callback);
                 } else {
-                    throw new Error('RECIPE NOT FOUND');
+                    console.log("\nINGREDIENT NOT FOUND");
                 }
-
+                asyncLoop(res, i+1, ingredientBarCodes, ingredientArray, callback);
             }).catch(err => {
                 console.error(err);
-                res.send("Error:\"RECIPE NOT FOUND\"");
+                res.send("Error:\"INGREDIENT NOT FOUND\"");
             });
 
         } else {
@@ -216,7 +224,6 @@ function asyncLoop(res, i, ingredientBarCodes, ingredientArray, callback) {
 //GET contenu frigo by token
 //tested
 router.get('/search/token/:token', function(req, res) {
-
     console.log("\nGET request: ");
     var token = req.params.token;
     console.log("\ntoken: " + token);
@@ -522,7 +529,6 @@ router.get('/search/groceries/token/:token', function(req, res) {
                         res.send("[]");
                     }
                 });
-
             } else {
                 console.log("\nFRIDGE LIST NOT FOUND");
                 res.send("{listNotFound:true}");
@@ -552,7 +558,7 @@ router.get('/fetchAllFridge/token/:token', function(req, res) {
                 var fridge = doc[0].toObject();
                 var ingredientArray = [];
 
-                asyncLoop(res, 0, fridge.ingredients, ingredientArray, function (ingredientArray) {
+                asyncLoop(res, 0, fridge.ingredientsBarcode, ingredientArray, function (ingredientArray) {
                     console.log(ingredientArray);
                     res.send(ingredientArray);
                 });
