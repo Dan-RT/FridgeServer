@@ -221,6 +221,8 @@ function asyncLoop(res, i, ingredientBarCodes, ingredientArray, callback) {
     }
 }
 
+
+
 //GET contenu frigo by token
 //tested
 router.get('/search/token/:token', function(req, res) {
@@ -576,7 +578,7 @@ router.get('/fetchAllFridge/token/:token', function(req, res) {
                 var fridge = doc[0].toObject();
                 var ingredientArray = [];
 
-                asyncLoop(res, 0, fridge.ingredientsBarcode, ingredientArray, function (ingredientArray) {
+                asyncLoop(res, 0, fridge.ingredients, ingredientArray, function (ingredientArray) {
                     console.log(ingredientArray);
                     res.send(ingredientArray);
                 });
@@ -601,6 +603,39 @@ listRecipes.push(new recipe("FTYGUHIOP987T6TFYH", "Pâtes Bolo",
     ], ["test", "tomato", "pates"], "test description"
     )
 );
+
+
+function asyncLoopRecipes(res, i, idRecipes, recipesArray, callback) {
+
+    try {
+        if(i < idRecipes.length) {
+            console.log(i);
+            console.log(idRecipes[i]);
+
+            RecipeModel.find({
+                idAPI: String(idRecipes[i])
+            }).then(doc => {
+                console.log(doc);
+                if (doc.length > 0) {
+                    console.log("\nRECIPE FOUND");
+                    recipesArray.push(doc[0].toObject());
+                } else {
+                    console.log("\nRECIPE NOT FOUND");
+                }
+                asyncLoopRecipes(res, i+1, idRecipes, recipesArray, callback);
+            }).catch(err => {
+                console.error(err);
+                res.send("Error:\"RECIPE NOT FOUND\"");
+            });
+
+        } else {
+            callback(recipesArray);
+        }
+    } catch (e) {
+        console.log(e);
+        callback(null);
+    }
+}
 
 
 //ADD recipes to fridge
@@ -764,7 +799,13 @@ router.get('/recipes/fetchAll/token/:token', function(req, res) {
             if (doc.length > 0) {
 
                 console.log(doc[0]);
-                res.send(doc[0].recipes);
+                var recipesArray = [];
+                asyncLoopRecipes(res, 0, doc[0].recipes, recipesArray, function () {
+
+
+
+                    res.send(recipesArray);
+                });
 
             } else {
                 console.log("\nFRIDGE NOT FOUND");
