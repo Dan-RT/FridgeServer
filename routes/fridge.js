@@ -407,10 +407,11 @@ router.get('/ingredient/remove/barCode/:barCode/groceries/:groceries/token/:toke
                 }
             } else {
                 console.log("\nFRIDGE LIST NOT FOUND");
-                res.send("{listNotFound:true}");
+                res.send("{error:\"FRIDGE LIST NOT FOUND 2\"}");
             }
         }).catch(err => {
             console.error(err);
+            res.send("{error:\"FRIDGE LIST NOT FOUND 1\"}");
         });
     });
 });
@@ -604,7 +605,7 @@ router.post('/recipes/add/token/:token', function(req, res) {
     var token = req.params.token;
     console.log("\ntoken: " + token);
 
-    /*var id = listRecipes[0].idAPI;
+    var id = listRecipes[0].idAPI;
 
     let recipeToAdd = new RecipeModel({
         idAPI: listRecipes[0].idAPI,
@@ -612,8 +613,9 @@ router.post('/recipes/add/token/:token', function(req, res) {
         ingredientsBarcode: listRecipes[0].ingredientsBarcode,
         keywords: listRecipes[0].keywords,
         description: listRecipes[0].description
-    });*/
+    });
 
+    /*
     var id = request.body.idAPI;
 
     let recipeToAdd = new RecipeModel({
@@ -622,7 +624,7 @@ router.post('/recipes/add/token/:token', function(req, res) {
         ingredientsBarcode: request.body.ingredientsBarcode,
         keywords: request.body.keywords,
         description: request.body.description
-    });
+    });*/
 
     helper.authentification(res, token, function () {
 
