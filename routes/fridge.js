@@ -255,6 +255,12 @@ router.post('/ingredient/add/token/:token', function(req, res) {
     var token = req.params.token;
     console.log("\ntoken: " + token);
 
+    var keywords_req = req.body.keywords;
+    var name = req.body.name;
+    var keywords_name = name.split(" ");
+    var keywords = keywords_req.concat(keywords_name);
+    console.log(keywords);
+
     helper.authentification(res, token, function () {
 
         /*let ingredientToAdd = new IngredientModel({
@@ -268,13 +274,13 @@ router.post('/ingredient/add/token/:token', function(req, res) {
         });*/
 
         let ingredientToAdd = new IngredientModel({
-            name: request.body.name,
-            typeDish: request.body.typeDish,
-            typeMeal: request.body.typeMeal,
-            weight: request.body.weight,
-            quantity: request.body.quantity,
-            keywords: request.body.keywords,
-            barCode: request.body.barCode
+            name: req.body.name,
+            typeDish: req.body.typeDish,
+            typeMeal: req.body.typeMeal,
+            weight: req.body.weight,
+            quantity: req.body.quantity,
+            keywords: keywords,
+            barCode: req.body.barCode
         });
 
 
@@ -288,10 +294,10 @@ router.post('/ingredient/add/token/:token', function(req, res) {
 
                 for (var i = 0; i < doc[0].ingredients.length; i++) {
                     //ATTENTION À CHANGER ÉGALEMENT QUAND ON SUPPRIME LE STATIQUE
-                    if (doc[0].ingredients[i] === String(request.body.barCode)) {
+                    if (doc[0].ingredients[i] === String(req.body.barCode)) {
                         inFridge = true;
                         console.log("Ingredient already in fridge.");
-                        updateQuantity(res, token, true, request.body.barCode, request.body.quantity);
+                        updateQuantity(res, token, true, req.body.barCode, req.body.quantity);
                         break
                     }
                 }
@@ -616,14 +622,14 @@ router.post('/recipes/add/token/:token', function(req, res) {
     });
 
     /*
-    var id = request.body.idAPI;
+    var id = req.body.idAPI;
 
     let recipeToAdd = new RecipeModel({
-        idAPI: request.body.idAPI,
-        name: request.body.name,
-        ingredientsBarcode: request.body.ingredientsBarcode,
-        keywords: request.body.keywords,
-        description: request.body.description
+        idAPI: req.body.idAPI,
+        name: req.body.name,
+        ingredientsBarcode: req.body.ingredientsBarcode,
+        keywords: req.body.keywords,
+        description: req.body.description
     });*/
 
     helper.authentification(res, token, function () {
