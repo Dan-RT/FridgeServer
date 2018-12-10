@@ -1,10 +1,11 @@
 class recipe {
 
-  constructor (name, ingredientsBarcode, keywords, description) {
+  constructor (idAPI, name, ingredientsBarcode, keywords, description) {
   	this.name = name;
-    this.ingredients = ingredientsBarcode;
+    this.ingredientsBarcode = ingredientsBarcode;
     this.keywords = keywords;
     this.description = description;
+    this.idAPI = idAPI;
   }
 
   _generateKeywords() {
@@ -29,6 +30,7 @@ class recipe {
 
   toJSON () {
     return {
+      'idAPI': this.idAPI,
       'name': this.name,
       'ingredients': this.ingredients,
       'keywords': this.keywords,

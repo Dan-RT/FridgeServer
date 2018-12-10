@@ -1,8 +1,9 @@
-let mongoose = require('mongoose')
+let mongoose = require('mongoose');
 
 let recipeSchema  = new mongoose.Schema({
+    idAPI: String,
     name: String,
-    ingredients: Array,
+    ingredientsBarcode: Array,
     keywords: Array,
     description: String
 });

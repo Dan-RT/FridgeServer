@@ -17,15 +17,10 @@ router.get('/create/name/:name', function(req, res) {
 
     userToAdd.save()
         .then(doc => {
-            if (doc.lenght > 0) {
-                console.log("\nUSER INSERTION SUCCESSED");
-                console.log(doc[0]);
-                console.log("\n");
-                res.send(doc[0]);
-            } else {
-                throw new Error('FAILED TO INSERT USER');
-            }
-
+            console.log("\nUSER INSERTION SUCCESSED");
+            console.log(doc);
+            console.log("\n");
+            res.send(doc);
         }).catch(err => {
         console.error(err);
         res.send("{error:\"FAILED TO INSERT USER\"}");
@@ -39,7 +34,8 @@ router.get('/search/name/:name', function (req, res) {
     UserModel.find({
         name: req.params.name
     }).then(doc => {
-        if (doc.lenght > 0) {
+        console.log(doc);
+        if (doc.length > 0) {
             console.log("\nUSER FOUND BY NAME");
             console.log(doc);
             console.log("\n");
@@ -102,6 +98,7 @@ router.get('/delete/name/:name', function(req, res) {
         .findOneAndRemove({
             name: req.params.name
         }).then(doc => {
+            console.log(doc);
         if (doc.lenght > 0) {
             console.log("\nUSER DELETED");
             console.log(doc[0]);
@@ -123,7 +120,8 @@ router.get('/delete/token/:token', function(req, res) {
         .findOneAndRemove({
             token: req.params.token
         }).then(response => {
-            if (response.lenght > 0) {
+            console.log(response);
+            if (response !== null) {
                 console.log("\nUSER DELETED");
                 console.log("\n");
 
@@ -131,17 +129,19 @@ router.get('/delete/token/:token', function(req, res) {
                     .findOneAndRemove({
                         tokenUser: req.params.token
                     }).then(doc => {
-                        if (doc.lenght > 0) {
+                        if (doc !== null) {
                             console.log("\nFRIDGE DELETED");
                             console.log(doc);
                         } else {
-                            throw new Error('FAILED TO DELETE USER');
+                            console.log('NO FRIDGE TO DELETE, USER DELETED');
                         }
-
                 }).catch(err => {
                     console.error(err);
                     res.send("{error:\"FAILED TO DELETE USER\"}");
                 });
+
+                res.send(response);
+
             } else {
                 throw new Error('FAILED TO DELETE USER');
             }

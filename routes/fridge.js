@@ -8,6 +8,7 @@ const RecipeModel = require('../public/javascripts/mongoose/RecipeSchema');
 const IngredientModel = require('../public/javascripts/mongoose/IngredientSchema');
 const FridgeListModel = require('../public/javascripts/mongoose/FridgeListSchema');
 
+const recipe = require('../public/javascripts/models/recipe.js');
 
 const listIngredients = [];
 listIngredients.push(new Ingredient("Tomato Sauce", "plat", "lunch", "100", 1, ["tomato", "sauce", "bolognaise", "provençale"], "100000"));
@@ -46,11 +47,13 @@ insertFridgeList = function (res, token, barCodeIngredientToAdd) {
                         runValidators: true
                     })
                 .then(doc => {
-                    console.log(doc);
-                    console.log("\nFRIDGE LIST UPDATED");
-                    res.send(doc);
+                    if (doc.length > 0) {
+                        console.log(doc);
+                        console.log("\nFRIDGE LIST UPDATED");
+                        res.send(doc);
+                    }
                 }).catch(err => {
-                console.error(err);
+                    console.error(err);
             });
 
         }
@@ -565,18 +568,37 @@ router.get('/fetchAllFridge/token/:token', function(req, res) {
     });
 });
 
+
+var listRecipes = [];
+listRecipes.push(new recipe("FTYGUHIOP987T6TFYH", "Pâtes Bolo",
+    [
+        "100000",
+        "100001"
+    ], ["test", "tomato", "pates"], "test description"
+    )
+);
+
+
 //ADD recipes to fridge
 //tested
-router.get('/recipes/add/id/:id/token/:token', function(req, res) {
+router.post('/recipes/add/token/:token', function(req, res) {
 
     console.log("\nGET request: ");
     var token = req.params.token;
     console.log("\ntoken: " + token);
 
-    var id = req.params.id;
-    console.log("\nid recette: " + id);
+    var id = listRecipes[0].idAPI;
+
+    let recipeToAdd = new RecipeModel({
+        idAPI: listRecipes[0].idAPI,
+        name: listRecipes[0].name,
+        ingredientsBarcode: listRecipes[0].ingredientsBarcode,
+        keywords: listRecipes[0].keywords,
+        description: listRecipes[0].description
+    });
 
     helper.authentification(res, token, function () {
+
         FridgeListModel.find({
             tokenUser: token
         }).then(doc => {
@@ -601,7 +623,15 @@ router.get('/recipes/add/id/:id/token/:token', function(req, res) {
                         console.log(doc);
                         console.log("\nFRIDGE RECIPES UPDATED");
 
-                        res.send(doc);
+                        recipeToAdd.save()
+                            .then(doc => {
+                                console.log("\nRECUPE ADDED TO DB");
+                                res.send(doc);
+                            }).catch(err => {
+                                console.error(err);
+                                res.send("{error:\"FAILED TO ADD RECIPE TO DB\"}");
+                            });
+
                     }).catch(err => {
                         console.error(err);
                         res.send("{error:\"RECIPES NOT UPDATED\"}");
@@ -675,6 +705,32 @@ router.get('/recipes/delete/id/:id/token/:token', function(req, res) {
                     console.log("\nRECIPE NOT FOUND");
                     res.send("{error:\"RECIPE NOT FOUND\"}");
                 }
+            } else {
+                console.log("\nFRIDGE NOT FOUND");
+                res.send("{error:\"FRIDGE NOT FOUND\"}");
+            }
+        }).catch(err => {
+            console.error(err);
+            res.send("{error:\"unknown\"}");
+        });
+    });
+});
+
+router.get('/recipes/fetchAll/token/:token', function(req, res) {
+
+    console.log("\nGET request: ");
+    var token = req.params.token;
+    console.log("\ntoken: " + token);
+
+    helper.authentification(res, token, function () {
+        FridgeListModel.find({
+            tokenUser: token
+        }).then(doc => {
+            if (doc.length > 0) {
+
+                console.log(doc[0]);
+                res.send(doc[0].recipes);
+
             } else {
                 console.log("\nFRIDGE NOT FOUND");
                 res.send("{error:\"FRIDGE NOT FOUND\"}");

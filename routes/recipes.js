@@ -13,22 +13,22 @@ const listRecipes = [];
 
 listRecipes.push(new recipe("Pâtes Bolo",
                                 [
-                                    "5becd03653760912cc84fcbd",
-                                    "5becd05cae953512d692e9a9"
+                                    "100000",
+                                    "100001"
                                 ], ["test", "tomato", "pates"], "test description"
                             )
                 );
 
 listRecipes.push(new recipe("Pâtes Pesto",
                                 [
-                                    "5becd04a50aa2512d28bb55f",
-                                    "5becd05cae953512d692e9a9"
+                                    "100001",
+                                    "100000"
                                 ], ["test", "tomato", "pates"], "test description"
                             )
                 );
 listRecipes.push(new recipe("Soupe de tomate",
                                 [
-                                    "5becd03653760912cc84fcbd"
+                                    "100000"
                                 ], ["soupe", "soup"],  "test description"
                             )
                 );
@@ -46,13 +46,17 @@ router.get('/search/keyword/:keyword/token/:token', function (req, res) {
         RecipeModel.find({
             keywords: keyword_
         }).then(doc => {
-            console.log("\nDOCUMENT FOUND");
-            console.log(doc);
-            console.log("\n");
-            res.send(doc);
+            if (doc.length > 0) {
+                console.log("\nRECIPE FOUND");
+                console.log(doc[0]);
+                console.log("\n");
+                res.send(doc[0]);
+            } else {
+                throw new Error('RECIPE NOT FOUND');
+            }
         }).catch(err => {
             console.error(err);
-            res.send("{}");
+            res.send("{error:\"RECIPE NOT FOUND\"}");
         });
     });
 });
@@ -77,25 +81,37 @@ function asyncLoop(i, ingredientArray, keywordsIngredients, callback) {
     if(i < ingredientArray.length) {
         console.log(i);
 
-        IngredientModel.findById(ingredientArray[i]).then(doc => {
-            console.log("\nINGREDIENT FOUND");
-            console.log("\nKeyword current ingredients:");
+        IngredientModel.find({
+            barCode: String(ingredientArray[i])
+        }).then(doc => {
+            //console.log(doc);
+            if (doc.length > 0) {
+                console.log("\nINGREDIENT FOUND");
+                //console.log(doc);
+                console.log("\nKeyword current ingredients:");
 
-            var keywordsTmp = doc.toObject().keywords;
-            console.log(keywordsTmp);
 
-            if (keywordsIngredients.length === 0) {
-                keywordsIngredients = keywordsTmp.slice();
+                var keywordsTmp = doc[0].toObject().keywords;
+                console.log(keywordsTmp);
+
+                if (keywordsIngredients.length === 0) {
+                    keywordsIngredients = keywordsTmp.slice();
+                } else {
+                    keywordsIngredients = keywordsIngredients.concat(keywordsTmp);
+                }
+
+                console.log("\nKeyword total:");
+                console.log(keywordsIngredients);
+
+
             } else {
-                keywordsIngredients = keywordsIngredients.concat(keywordsTmp);
+                console.log("\nINGREDIENT NOT FOUND");
             }
-
-            console.log("\nKeyword total:");
-            console.log(keywordsIngredients);
-
             asyncLoop(i+1, ingredientArray, keywordsIngredients, callback);
+
         }).catch(err => {
             console.error(err);
+            res.send("error:\"INGREDIENT NOT FOUND\"");
         });
 
     } else {
@@ -118,7 +134,9 @@ router.post('/add/token/:token', function(req, res) {
 
         var keywordsIngredients = [];
 
-        asyncLoop(0, listRecipes[0].ingredients, keywordsIngredients, function(keywordsIngredients) {
+        console.log("BLABLABLA");
+
+        asyncLoop(0, listRecipes[0].ingredientsBarcode, keywordsIngredients, function(keywordsIngredients) {
             //code that should happen after the loop
 
             console.log("\nKeywords of the new Recipe:");
@@ -126,7 +144,7 @@ router.post('/add/token/:token', function(req, res) {
 
             let recipeToAdd = new RecipeModel({
                 name: listRecipes[0].name,
-                ingredients: listRecipes[0].ingredients,
+                ingredients: listRecipes[0].ingredientsBarcode,
                 keywords: keywordsIngredients,
                 description: listRecipes[0].description
             });

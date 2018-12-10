@@ -4,6 +4,7 @@ exports.authentification = function (res, token, callback) {
     UserModel.find({
         token: token
     }).then(doc => {
+        console.log(doc);
         if (doc.length === 0) {
             throw Error('USER NOT AUTHORIZED');
         } else {
@@ -16,3 +17,5 @@ exports.authentification = function (res, token, callback) {
         res.send("{notAuthorized:true}");
     });
 };
+
+
