@@ -34,13 +34,18 @@ router.get('/search/name/:name', function (req, res) {
     UserModel.find({
         name: req.params.name
     }).then(doc => {
-        console.log("\nUSER FOUND BY NAME");
-        console.log(doc);
-        console.log("\n");
-        res.send(doc[0]);
+        if (doc.lenght > 0) {
+            console.log("\nUSER FOUND BY NAME");
+            console.log(doc);
+            console.log("\n");
+            res.send(doc[0]);
+        } else {
+            throw new Error('USER NOT FOUND');
+        }
+
     }).catch(err => {
         console.error(err);
-        res.send("{error:true}");
+        res.send("{error:\"USER NOT FOUND\"}");
     });
 });
 

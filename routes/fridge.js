@@ -260,19 +260,20 @@ router.post('/ingredient/add/token/:token', function(req, res) {
         FridgeListModel.find({
             tokenUser: token
         }).then(doc => {
-            console.log("Ingredient verification");
-            console.log(doc[0].ingredients);
-            var inFridge = false;
+            if (doc.length > 0) {
+                console.log("Ingredient verification");
+                console.log(doc[0].ingredients);
+                var inFridge = false;
 
-            for (var i = 0; i < doc[0].ingredients.length; i++) {
-                //ATTENTION À CHANGER ÉGALEMENT QUAND ON SUPPRIME LE STATIQUE
-                if (doc[0].ingredients[i] === String(listIngredients[1].barCode)) {
-                    inFridge = true;
-                    console.log("Ingredient already in fridge.");
-                    updateQuantity(res, token, true,listIngredients[1].barCode, listIngredients[1].quantity);
-                    break
+                for (var i = 0; i < doc[0].ingredients.length; i++) {
+                    //ATTENTION À CHANGER ÉGALEMENT QUAND ON SUPPRIME LE STATIQUE
+                    if (doc[0].ingredients[i] === String(listIngredients[1].barCode)) {
+                        inFridge = true;
+                        console.log("Ingredient already in fridge.");
+                        updateQuantity(res, token, true, listIngredients[1].barCode, listIngredients[1].quantity);
+                        break
+                    }
                 }
-
             }
 
             if (!inFridge) {
@@ -288,6 +289,7 @@ router.post('/ingredient/add/token/:token', function(req, res) {
                     res.send("{error:true}");
                 });
             }
+
         }).catch(err => {
             console.error(err);
             res.send("{error:true}");
