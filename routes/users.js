@@ -17,13 +17,18 @@ router.get('/create/name/:name', function(req, res) {
 
     userToAdd.save()
         .then(doc => {
-            console.log("\nUSER INSERTION SUCCESSED");
-            console.log(doc);
-            console.log("\n");
-            res.send(doc);
+            if (doc.lenght > 0) {
+                console.log("\nUSER INSERTION SUCCESSED");
+                console.log(doc[0]);
+                console.log("\n");
+                res.send(doc[0]);
+            } else {
+                throw new Error('FAILED TO INSERT USER');
+            }
+
         }).catch(err => {
         console.error(err);
-        res.send("{error:true}");
+        res.send("{error:\"FAILED TO INSERT USER\"}");
     });
 });
 
@@ -42,7 +47,6 @@ router.get('/search/name/:name', function (req, res) {
         } else {
             throw new Error('USER NOT FOUND');
         }
-
     }).catch(err => {
         console.error(err);
         res.send("{error:\"USER NOT FOUND\"}");
@@ -54,13 +58,17 @@ router.get('/search/id/:id', function(req, res) {
     console.log("GET search User: " + req.params.id);
 
     UserModel.findById(req.params.id).then(doc => {
-        console.log("\nUSER FOUND BY ID");
-        console.log(doc);
-        console.log("\n");
-        res.send(doc);
+        if (doc.lenght > 0) {
+            console.log("\nUSER FOUND BY ID");
+            console.log(doc[0]);
+            console.log("\n");
+            res.send(doc[0]);
+        } else {
+            throw new Error('USER NOT FOUND');
+        }
     }).catch(err => {
         console.error(err);
-        res.send("{error:true}");
+        res.send("{error:\"USER NOT FOUND\"}");
     });
 
 });
@@ -72,13 +80,17 @@ router.get('/search/token/:token', function (req, res) {
     UserModel.find({
         token: req.params.token
     }).then(doc => {
-        console.log("\nUSER FOUND BY TOKEN");
-        console.log(doc[0]);
-        console.log("\n");
-        res.send(doc[0]);
+        if (doc.lenght > 0) {
+            console.log("\nUSER FOUND BY TOKEN");
+            console.log(doc[0]);
+            console.log("\n");
+            res.send(doc[0]);
+        } else {
+            throw new Error('USER NOT FOUND');
+        }
     }).catch(err => {
         console.error(err);
-        res.send("{error:true}");
+        res.send("{error:\"USER NOT FOUND\"}");
     });
 });
 
@@ -90,12 +102,16 @@ router.get('/delete/name/:name', function(req, res) {
         .findOneAndRemove({
             name: req.params.name
         }).then(doc => {
-        console.log("\nUSER DELETED");
-        console.log(doc);
-        res.send(doc);
+        if (doc.lenght > 0) {
+            console.log("\nUSER DELETED");
+            console.log(doc[0]);
+            res.send(doc[0]);
+        } else {
+            throw new Error('FAILED TO DELETE USER');
+        }
     }).catch(err => {
         console.error(err);
-        res.send("{error:true}");
+        res.send("{error:\"FAILED TO DELETE USER\"}");
     });
 });
 
@@ -107,24 +123,33 @@ router.get('/delete/token/:token', function(req, res) {
         .findOneAndRemove({
             token: req.params.token
         }).then(response => {
-        console.log("\nUSER DELETED");
-        console.log("\n");
+            if (response.lenght > 0) {
+                console.log("\nUSER DELETED");
+                console.log("\n");
 
-        FridgeListModel
-            .findOneAndRemove({
-                tokenUser: req.params.token
-            }).then(doc => {
-            console.log("\nFRIDGE DELETED");
-            console.log(doc);
-        }).catch(err => {
-            //console.error(err);
-        });
+                FridgeListModel
+                    .findOneAndRemove({
+                        tokenUser: req.params.token
+                    }).then(doc => {
+                        if (doc.lenght > 0) {
+                            console.log("\nFRIDGE DELETED");
+                            console.log(doc);
+                        } else {
+                            throw new Error('FAILED TO DELETE USER');
+                        }
 
-        res.send(response);
+                }).catch(err => {
+                    console.error(err);
+                    res.send("{error:\"FAILED TO DELETE USER\"}");
+                });
+            } else {
+                throw new Error('FAILED TO DELETE USER');
+            }
     }).catch(err => {
         console.error(err);
-        res.send("{error:true}");
+        res.send("{error:\"FAILED TO DELETE USER\"}");
     });
 });
 
 module.exports = router;
+
