@@ -80,6 +80,10 @@ insertFridgeList = function (res, token, barCodeIngredientToAdd) {
 };
 
 updateQuantity = function (res, token, add, barCode, quantity) {
+
+    console.log("updateQuantity");
+    console.log("barCode: " + barCode);
+
     FridgeListModel.find({
         tokenUser: token
     }).then(doc => {
@@ -88,8 +92,9 @@ updateQuantity = function (res, token, add, barCode, quantity) {
             console.log(doc[0]);
 
             IngredientModel.find({
-                barCode: barCode
+                barCode: String(barCode)
             }).then(doc_ingr => {
+                console.log(doc_ingr);
                 if (doc_ingr.length > 0) {
                     console.log("\nINGREDIENT FOUND");
                     //console.log(doc_ingr[0]);
@@ -164,7 +169,7 @@ sendBackFridge = function (res, fridge, index) {
             console.log("\nFRIDGE LIST UPDATED");
 
             var ingredientArray = [];
-            asyncLoop(0, doc.ingredients, ingredientArray, function (ingredientArray) {
+            asyncLoop(res, 0, doc.ingredients, ingredientArray, function (ingredientArray) {
                 res.send(ingredientArray);
             });
 
@@ -173,7 +178,7 @@ sendBackFridge = function (res, fridge, index) {
     });
 };
 
-function asyncLoop(i, ingredientBarCodes, ingredientArray, callback) {
+function asyncLoop(res, i, ingredientBarCodes, ingredientArray, callback) {
     try {
         if(i < ingredientBarCodes.length) {
             console.log(i);
@@ -184,12 +189,16 @@ function asyncLoop(i, ingredientBarCodes, ingredientArray, callback) {
             }).then(doc => {
                 console.log("\nINGREDIENT FOUND");
                 console.log(doc);
+                if (doc[0] !== undefined) {
+                    ingredientArray.push(doc[0].toObject());
+                    asyncLoop(res, i+1, ingredientBarCodes, ingredientArray, callback);
+                } else {
+                    throw new Error('RECIPE NOT FOUND');
+                }
 
-                ingredientArray.push(doc[0].toObject());
-
-                asyncLoop(i+1, ingredientBarCodes, ingredientArray, callback);
             }).catch(err => {
                 console.error(err);
+                res.send("Error:\"RECIPE NOT FOUND\"");
             });
 
         } else {
@@ -248,7 +257,6 @@ router.post('/ingredient/add/token/:token', function(req, res) {
             barCode: listIngredients[1].barCode
         });
 
-
         FridgeListModel.find({
             tokenUser: token
         }).then(doc => {
@@ -261,15 +269,13 @@ router.post('/ingredient/add/token/:token', function(req, res) {
                 if (doc[0].ingredients[i] === String(listIngredients[1].barCode)) {
                     inFridge = true;
                     console.log("Ingredient already in fridge.");
+                    updateQuantity(res, token, true,listIngredients[1].barCode, listIngredients[1].quantity);
                     break
                 }
 
             }
 
-            if (inFridge) {
-                console.log("\nINGREDIENT ALREADY IN FRIDGE");
-                res.send("{error:\"INGREDIENT ALREADY IN FRIDGE\"}");
-            } else {
+            if (!inFridge) {
                 ingredientToAdd.save()
                     .then(doc => {
                         console.log("\nINGREDIENT INSERTION SUCCESSED");
@@ -457,7 +463,7 @@ router.get('/remove/groceries/barCode/:barCode/token/:token', function(req, res)
                                 console.log(doc);
                                 console.log("\nGROCERY LIST UPDATED");
                                 var ingredientArray = [];
-                                asyncLoop(0, doc.groceries, ingredientArray, function (ingredientArray) {
+                                asyncLoop(res, 0, doc.groceries, ingredientArray, function (ingredientArray) {
                                     res.send(ingredientArray);
                                 });
 
@@ -503,7 +509,7 @@ router.get('/search/groceries/token/:token', function(req, res) {
                 console.log(doc[0].groceries);
 
                 var ingredientArray = [];
-                asyncLoop(0, doc[0].groceries, ingredientArray, function (ingredientArray) {
+                asyncLoop(res, 0, doc[0].groceries, ingredientArray, function (ingredientArray) {
                     if (ingredientArray) {
                         console.log(ingredientArray);
                         res.send(ingredientArray);
@@ -541,7 +547,7 @@ router.get('/fetchAllFridge/token/:token', function(req, res) {
                 var fridge = doc[0].toObject();
                 var ingredientArray = [];
 
-                asyncLoop(0, fridge.ingredients, ingredientArray, function (ingredientArray) {
+                asyncLoop(res, 0, fridge.ingredients, ingredientArray, function (ingredientArray) {
                     console.log(ingredientArray);
                     res.send(ingredientArray);
                 });
