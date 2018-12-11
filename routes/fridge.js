@@ -48,7 +48,8 @@ insertFridgeList = function (res, token, barCodeIngredientToAdd) {
                         runValidators: true
                     })
                 .then(doc => {
-                    if (doc.length > 0) {
+                    console.log(doc);
+                    if (doc !== null) {
                         console.log(doc);
                         console.log("\nFRIDGE LIST UPDATED");
                         res.send(doc);
