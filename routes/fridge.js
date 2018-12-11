@@ -275,13 +275,14 @@ router.post('/ingredient/add/token/:token', function(req, res) {
             keywords: listIngredients[1].keywords,
             barCode: listIngredients[1].barCode
         });*/
+        console.log(req.body);
 
         let ingredientToAdd = new IngredientModel({
             name: req.body.name,
             typeDish: req.body.typeDish,
             typeMeal: req.body.typeMeal,
-            weight: req.body.weight,
-            quantity: req.body.quantity,
+            weight: parseInt(req.body.weight),
+            quantity: parseInt(req.body.quantity),
             keywords: keywords,
             barCode: req.body.barCode
         });
@@ -599,7 +600,7 @@ router.get('/fetchAllFridge/token/:token', function(req, res) {
 var listRecipes = [];
 listRecipes.push(new recipe("FTYGUHIOP987T6TFYH", "Pâtes Bolo",
     [
-        "100000",
+        "100002",
         "100001"
     ], ["test", "tomato", "pates"], "test description"
     )
@@ -619,7 +620,13 @@ function asyncLoopRecipes(res, i, idRecipes, recipesArray, callback) {
                 console.log(doc);
                 if (doc.length > 0) {
                     console.log("\nRECIPE FOUND");
-                    recipesArray.push(doc[0].toObject());
+                    var recipetmp = doc[0].toObject();
+                    var ingredientArray = [];
+
+                    asyncLoop(res, 0, recipetmp.ingredientsBarcode, ingredientArray, function () {
+                        recipetmp["ingredientsDetailed"] = ingredientArray;
+                        recipesArray.push(recipetmp);
+                    });
                 } else {
                     console.log("\nRECIPE NOT FOUND");
                 }
@@ -802,9 +809,6 @@ router.get('/recipes/fetchAll/token/:token', function(req, res) {
                 console.log(doc[0]);
                 var recipesArray = [];
                 asyncLoopRecipes(res, 0, doc[0].recipes, recipesArray, function () {
-
-
-
                     res.send(recipesArray);
                 });
 
