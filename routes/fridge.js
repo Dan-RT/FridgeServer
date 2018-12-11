@@ -204,6 +204,9 @@ function asyncLoop(res, i, ingredientBarCodes, ingredientArray, callback) {
                 if (doc.length > 0) {
                     console.log("\nINGREDIENT FOUND");
                     ingredientArray.push(doc[0].toObject());
+                    console.log("ajout à ingredientArray:");
+                    console.log(ingredientArray);
+                    console.log("\n");
                 } else {
                     console.log("\nINGREDIENT NOT FOUND");
                 }
@@ -614,7 +617,7 @@ function asyncLoopRecipes(res, i, idRecipes, recipesArray, callback) {
             console.log(idRecipes[i]);
 
             RecipeModel.find({
-                idAPI: String(idRecipes[i])
+                _id: String(idRecipes[i])
             }).then(doc => {
                 console.log(doc);
                 if (doc.length > 0) {
@@ -625,11 +628,12 @@ function asyncLoopRecipes(res, i, idRecipes, recipesArray, callback) {
                     asyncLoop(res, 0, recipetmp.ingredientsBarcode, ingredientArray, function () {
                         recipetmp["ingredientsDetailed"] = ingredientArray;
                         recipesArray.push(recipetmp);
+                        asyncLoopRecipes(res, i+1, idRecipes, recipesArray, callback);
                     });
                 } else {
                     console.log("\nRECIPE NOT FOUND");
+                    asyncLoopRecipes(res, i+1, idRecipes, recipesArray, callback);
                 }
-                asyncLoopRecipes(res, i+1, idRecipes, recipesArray, callback);
             }).catch(err => {
                 console.error(err);
                 res.send("Error:\"RECIPE NOT FOUND\"");
@@ -663,12 +667,11 @@ router.post('/recipes/add/token/:token', function(req, res) {
     });
 */
 
-    var id = req.body.idAPI;
+    var barCodes = ["111114", "111113", "111112", "111111"]; //req.body.ingredientsBarCode;
 
     let recipeToAdd = new RecipeModel({
-        idAPI: req.body.idAPI,
         name: req.body.name,
-        ingredientsBarcode: req.body.ingredientsBarcode,
+        ingredientsBarcode: barCodes,
         keywords: req.body.keywords,
         description: req.body.description
     });
@@ -681,36 +684,39 @@ router.post('/recipes/add/token/:token', function(req, res) {
             if (doc.length > 0) {
                 var fridge = doc[0];
 
-                fridge.recipes.push(id);
-
-                FridgeListModel
-                    .findOneAndUpdate(
-                        {
-                            _id: fridge.id
-                        },
-                        {
-                            recipes: fridge.recipes
-                        },
-                        {
-                            new: true,
-                            runValidators: true
-                        })
+                recipeToAdd.save()
                     .then(doc => {
-                        console.log(doc);
-                        console.log("\nFRIDGE RECIPES UPDATED");
+                        console.log("\nRECIPE ADDED TO DB");
 
-                        recipeToAdd.save()
+                        fridge.recipes.push(doc.toObject()._id);
+                        console.log("\nRecipes: ");
+                        console.log(fridge.recipes);
+                        console.log("\n");
+
+                        FridgeListModel
+                            .findOneAndUpdate(
+                                {
+                                    _id: fridge.id
+                                },
+                                {
+                                    recipes: fridge.recipes
+                                },
+                                {
+                                    new: true,
+                                    runValidators: true
+                                })
                             .then(doc => {
-                                console.log("\nRECUPE ADDED TO DB");
+                                console.log(doc);
+                                console.log("\nFRIDGE RECIPES UPDATED");
                                 res.send(doc);
                             }).catch(err => {
                                 console.error(err);
-                                res.send("{error:\"FAILED TO ADD RECIPE TO DB\"}");
+                                res.send("{error:\"RECIPES NOT UPDATED\"}");
                             });
 
                     }).catch(err => {
                         console.error(err);
-                        res.send("{error:\"RECIPES NOT UPDATED\"}");
+                        res.send("{error:\"FAILED TO ADD RECIPE TO DB\"}");
                     });
 
             } else {
@@ -807,6 +813,8 @@ router.get('/recipes/fetchAll/token/:token', function(req, res) {
                 console.log(doc[0]);
                 var recipesArray = [];
                 asyncLoopRecipes(res, 0, doc[0].recipes, recipesArray, function () {
+                    console.log("To be send:");
+                    console.log(recipesArray);
                     res.send(recipesArray);
                 });
 

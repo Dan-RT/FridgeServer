@@ -5,7 +5,6 @@ class recipe {
     this.ingredientsBarcode = ingredientsBarcode;
     this.keywords = keywords;
     this.description = description;
-    this.idAPI = idAPI;
   }
 
   _generateKeywords() {
