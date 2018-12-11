@@ -14,7 +14,7 @@ var database = require('./public/javascripts/database');
 
 var app = express();
 
-var port = proces.env.PORT || 8002;
+var port = process.env.PORT || 8002;
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

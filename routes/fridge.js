@@ -652,7 +652,7 @@ router.post('/recipes/add/token/:token', function(req, res) {
     var token = req.params.token;
     console.log("\ntoken: " + token);
 
-    var id = listRecipes[0].idAPI;
+    /*var id = listRecipes[0].idAPI;
 
     let recipeToAdd = new RecipeModel({
         idAPI: listRecipes[0].idAPI,
@@ -661,8 +661,8 @@ router.post('/recipes/add/token/:token', function(req, res) {
         keywords: listRecipes[0].keywords,
         description: listRecipes[0].description
     });
+*/
 
-    /*
     var id = req.body.idAPI;
 
     let recipeToAdd = new RecipeModel({
@@ -671,7 +671,7 @@ router.post('/recipes/add/token/:token', function(req, res) {
         ingredientsBarcode: req.body.ingredientsBarcode,
         keywords: req.body.keywords,
         description: req.body.description
-    });*/
+    });
 
     helper.authentification(res, token, function () {
 
