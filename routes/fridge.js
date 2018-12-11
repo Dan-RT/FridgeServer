@@ -606,7 +606,6 @@ listRecipes.push(new recipe("FTYGUHIOP987T6TFYH", "Pâtes Bolo",
     )
 );
 
-
 function asyncLoopRecipes(res, i, idRecipes, recipesArray, callback) {
 
     try {
@@ -644,7 +643,6 @@ function asyncLoopRecipes(res, i, idRecipes, recipesArray, callback) {
         callback(null);
     }
 }
-
 
 //ADD recipes to fridge
 //tested

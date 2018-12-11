@@ -14,6 +14,8 @@ var database = require('./public/javascripts/database');
 
 var app = express();
 
+var port = proces.env.PORT || 8002;
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
@@ -45,6 +47,6 @@ app.use(function(err, req, res, next) {
     res.render('error');
 });
 
-console.log("Magic happens on port 3000");
+console.log("Magic happens on port " + port);
 
 module.exports = app;
